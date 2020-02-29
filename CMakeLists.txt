@@ -46,7 +46,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(common_files
         src/common/jsmn.c
         src/common/shared.c
-        src/common/osx/osd.c)
+        src/common/osx/osd.c
+        )
 
 add_executable(fi_rdm src/rdm.c ${common_files})
 target_link_libraries(fi_rdm ${LIBFABRIC_LIBRARY})
@@ -56,3 +57,6 @@ target_link_libraries(fi_bw ${LIBFABRIC_LIBRARY})
 
 add_executable(fi_multi_ep src/multi_ep.c ${common_files})
 target_link_libraries(fi_multi_ep ${LIBFABRIC_LIBRARY})
+
+add_executable(fi_getinfo src/getinfo_test.c ${common_files})
+target_link_libraries(fi_getinfo ${LIBFABRIC_LIBRARY})
