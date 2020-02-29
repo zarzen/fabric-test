@@ -53,3 +53,6 @@ target_link_libraries(fi_rdm ${LIBFABRIC_LIBRARY})
 
 add_executable(fi_bw src/bw.c ${common_files})
 target_link_libraries(fi_bw ${LIBFABRIC_LIBRARY})
+
+add_executable(fi_multi_ep src/multi_ep.c ${common_files})
+target_link_libraries(fi_multi_ep ${LIBFABRIC_LIBRARY})
