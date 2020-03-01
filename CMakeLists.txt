@@ -47,6 +47,7 @@ set(common_files
         src/common/jsmn.c
         src/common/shared.c
         src/common/osx/osd.c
+        src/benchmark_shared.c
         )
 
 add_executable(fi_rdm src/rdm.c ${common_files})
@@ -60,3 +61,6 @@ target_link_libraries(fi_multi_ep ${LIBFABRIC_LIBRARY})
 
 add_executable(fi_getinfo src/getinfo_test.c ${common_files})
 target_link_libraries(fi_getinfo ${LIBFABRIC_LIBRARY})
+
+add_executable(fi_rdm_tagged_bw src/rdm_tagged_bw.c ${common_files})
+target_link_libraries(fi_rdm_tagged_bw ${LIBFABRIC_LIBRARY})
