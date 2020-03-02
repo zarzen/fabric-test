@@ -3,6 +3,12 @@ project(fabTrans)
 
 set(CMAKE_CXX_STANDARD 11)
 
+if(UNIX AND NOT APPLE)
+    # for Linux, BSD, Solaris, Minix
+    set(LIBFABRIC_LIBRARY /opt/amazon/efa/lib/libfabric.so)
+    set(LIBFABRIC_INCLUDE_DIR /opt/amazon/efa/include)
+endif()
+
 ######################################################
 # - Try to find libfabric (http://directory.fsf.org/wiki/Libfabric)
 # Once done this will define

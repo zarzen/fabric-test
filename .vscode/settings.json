@@ -1,0 +1,6 @@
+{
+    "C_Cpp.default.includePath": [
+        "${workspaceFolder}/include",
+        "/opt/amazon/efa/include"
+    ]
+}
