@@ -137,7 +137,7 @@ struct test_size_param test_size[] = {
 	{ 1 << 19, 0 }, { (1 << 19) + (1 << 18), 0 },
 	{ 1 << 20, FT_DEFAULT_SIZE }, { (1 << 20) + (1 << 19), FT_DEFAULT_SIZE },
 	{ 1 << 21, FT_DEFAULT_SIZE }, { (1 << 21) + (1 << 20), 0 },
-	{ 1 << 22, 0 }, { (1 << 22) + (1 << 21), 0 },
+	{ 1 << 22, FT_DEFAULT_SIZE }, { (1 << 22) + (1 << 21), FT_DEFAULT_SIZE },
 	{ 1 << 23, 0 },
 };
 
