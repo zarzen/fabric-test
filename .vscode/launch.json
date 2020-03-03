@@ -5,6 +5,48 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "fi_rdm_tagged_bw (server)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Debug/fi_rdm_tagged_bw",
+            "args": ["-p", "efa", "-s", "fe80::54:faff:feeb:cac7"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "debug-build",
+            "miDebuggerPath": "/usr/bin/gdb"
+        },
+        {
+            "name": "multi_ep (server)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Debug/fi_multi_ep",
+            "args": ["-p", "efa", "-s", "fe80::54:faff:feeb:cac7"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "debug-build",
+            "miDebuggerPath": "/usr/bin/gdb"
+        },
+        {
             "name": "gcc-7 debug rdm",
             "type": "cppdbg",
             "request": "launch",
