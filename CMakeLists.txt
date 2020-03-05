@@ -70,3 +70,6 @@ target_link_libraries(fi_getinfo ${LIBFABRIC_LIBRARY})
 
 add_executable(fi_rdm_tagged_bw src/rdm_tagged_bw.c ${common_files})
 target_link_libraries(fi_rdm_tagged_bw ${LIBFABRIC_LIBRARY})
+
+add_executable(fi_hello src/hello.cpp ${common_files})
+target_link_libraries(fi_hello ${LIBFABRIC_LIBRARY})
