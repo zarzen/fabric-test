@@ -8,6 +8,7 @@
  * 	2013-2017
  * ********************************************************************/
 #include <iostream>
+#include <chrono>
 #include <string>
 #include <stdio.h>
 #include <stdlib.h>
@@ -83,8 +84,8 @@ static void init_fabric()
 	memset(buf, 0, len);
 
 	hints->ep_attr->type = FI_EP_RDM;
-	hints->caps = FI_MSG;
-	hints->mode = FI_CONTEXT;
+	// hints->caps = FI_MSG;
+	// hints->mode = FI_CONTEXT;
 	hints->fabric_attr->prov_name = strdup("efa");
 
 	version = FI_VERSION(1, 9);
@@ -149,6 +150,25 @@ int static finalize_fabric(void)
 	fi_freeinfo(fi);
 }
 
+static const char integ_alphabet[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+static const int integ_alphabet_length = (sizeof(integ_alphabet)/sizeof(*integ_alphabet)) - 1;
+void ft_fill_buf(void *buf, int size)
+{
+
+	char *msg_buf;
+	int msg_index;
+	static unsigned int iter = 0;
+	int i;
+
+	msg_index = ((iter++)*7) % integ_alphabet_length;
+	msg_buf = (char *)buf;
+	for (i = 0; i < size; i++) {
+		msg_buf[i] = integ_alphabet[msg_index++];
+		if (msg_index >= integ_alphabet_length)
+			msg_index = 0;
+	}
+}
+
 static void wait_cq(void)
 {
 	struct fi_cq_err_entry entry;
@@ -175,35 +195,50 @@ static void wait_cq(void)
 }
 
 static void send_one(int size)
-{
+{	
+	size_t largeSize = 200 * 1024 * 1024;
+	char* largebuff = new char[largeSize];
+	ft_fill_buf(largebuff, largeSize);
 	int err;
-
+	auto s = std::chrono::high_resolution_clock::now();
 	// CHK_ERR("send_one", (peer_addr==0ULL), -EDESTADDRREQ);
-
-    printf("Send to peer %lld\n", peer_addr);
-	char destAddr[64];
-	char buf[64];
+	std::cout << "Send to peer " << peer_addr << "\n";
 	size_t len = 64;
-	destAddr[0] = '\0';
-	err = fi_av_lookup(av, peer_addr, destAddr, &len);
-	printf("Send to peer address %s\n", destAddr);
-	fi_av_straddr(av, destAddr, buf, &len);
-	printf("Send to peer address %s\n", buf);
 
-	err = fi_send(ep, sbuf, size, NULL, peer_addr, &sctxt);
+	// err = fi_send(ep, sbuf, size, NULL, peer_addr, &sctxt);
+	// err = fi_tsend(ep, sbuf, size, NULL, peer_addr, 123, NULL);
+	// err = fi_tsend(ep, largebuff, largeSize, NULL, peer_addr, 123, NULL);
+	err = fi_send(ep, largebuff, largeSize, NULL, peer_addr, &sctxt);
 	CHK_ERR("fi_send", (err<0), err);
 
 	wait_cq();
+	auto e = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double, std::milli> cost_t = e - s;
+	std::cout << "Send message cost :" << cost_t.count() << " ms\n";
+	std::cout << s.time_since_epoch().count() << "\n";
+	std::cout << e.time_since_epoch().count() << "\n";
+	delete[] largebuff;
 }
 
 static void recv_one(int size)
 {
+	size_t largeSize = 200 * 1024 * 1024;
+	char* largebuff = new char[largeSize];
 	int err;
-
-	err = fi_recv(ep, rbuf, size, NULL, FI_ADDR_UNSPEC, &rctxt);
+	auto s = std::chrono::high_resolution_clock::now();
+	// err = fi_recv(ep, rbuf, size, NULL, FI_ADDR_UNSPEC, &rctxt);
+	// err = fi_trecv(ep, rbuf, size, NULL, FI_ADDR_UNSPEC, 123, 0, NULL);
+	// err = fi_trecv(ep, largebuff, largeSize, NULL, FI_ADDR_UNSPEC, 123, 0, NULL);
+	err = fi_recv(ep, largebuff, largeSize, NULL, FI_ADDR_UNSPEC, &rctxt);
 	CHK_ERR("fi_recv", (err<0), err);
 
 	wait_cq();
+	auto e = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double, std::milli> cost_t = e - s;
+	std::cout << "Recv message cost :" << cost_t.count() << " ms\n";
+	std::cout << s.time_since_epoch().count() << "\n";
+	std::cout << e.time_since_epoch().count() << "\n";
+	delete[] largebuff;
 }
 
 
