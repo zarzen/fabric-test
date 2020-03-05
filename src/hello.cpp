@@ -46,6 +46,7 @@ static struct fi_context	rctxt;
 static char			sbuf[64];
 static char			rbuf[64];
 int is_client = 0;
+std::string nickname;
 
 static void get_peer_addr(void *peer_name)
 {
@@ -63,7 +64,7 @@ static void get_peer_addr(void *peer_name)
 	CHK_ERR("fi_av_insert", (err!=1), err);
 }
 
-static void init_fabric(char *server)
+static void init_fabric()
 {
 	struct fi_info		*hints;
 	struct fi_cq_attr	cq_attr;
@@ -128,19 +129,14 @@ static void init_fabric(char *server)
 
 	buf[0] = '\0';
 	len = 64;
-	printf("My ep Name is %s\n", name);
+	printf("My ep Name is buff contains \n");
 	for (int i = 0; i < 64; i ++){
 		printf("%d, ", name[i]);
 	}
 	printf("\n");
 	fi_av_straddr(av, name, buf, &len);
 	printf("My address is %s\n", buf);
-    buf[0] = '\0';
-    fi_av_straddr(av, fi->dest_addr, buf, &len);
-    printf("Dest address is %s\n", buf);
 
-	// if (server)
-	// 	get_peer_addr(fi->dest_addr);
 }
 
 int static finalize_fabric(void)
@@ -210,62 +206,70 @@ static void recv_one(int size)
 	wait_cq();
 }
 
+
+
 int main(int argc, char *argv[])
 {
-	
+	/* you need to modify the addr_dict for your own case*/
+	char addr_dict[6][17]  = {
+		{-2, -128, 0, 0, 0, 0, 0, 0, 0, -7, 127, -1, -2, -89, -77, -119, 0},
+		{-2, -128, 0, 0, 0, 0, 0, 0, 0, -7, 127, -1, -2, -89, -77, -119, 1},
+		{-2, -128, 0, 0, 0, 0, 0, 0, 0, -7, 127, -1, -2, -89, -77, -119, 2},
+		{-2, -128, 0, 0, 0, 0, 0, 0, 0, 53, -50, -1, -2, 32, 4, 113, 0},
+		{-2, -128, 0, 0, 0, 0, 0, 0, 0, 53, -50, -1, -2, 32, 4, 113, 1},
+		{-2, -128, 0, 0, 0, 0, 0, 0, 0, 53, -50, -1, -2, 32, 4, 113, 2}
+	};
+
 	char *server = NULL;
 	int size = 64;
 
-	if (argc > 1) {
-		is_client = 1;
-		server = argv[1];
-		strcpy(sbuf, "Hello server, I am client.");
-	} else {
-		strcpy(sbuf, "Hello client, I am server.");
+	if (argc < 2) {
+		std::cout << "Usage, require endpoint nick name, e.g. ./fi_hello ep0 \n";
+		return 1;
 	}
+	nickname = std::string(argv[1]);
+	std::string msg = "Hi server, this is "+nickname;
+	strcpy(sbuf, msg.c_str());
 
-	init_fabric(server);
-	// get user inputs peer address
-	// std::string peerAddr;
-	// std::cout << "Input address of another node\n" ;
-	// std::getline(std::cin, peerAddr);
-	// std::cout << "get input address size " << peerAddr.length() << "\n";
-	// int numSuccess = 0;
-	// numSuccess = fi_av_insert(av, peerAddr.c_str(), 1, &peer_addr, 0, NULL);
-	// CHK_ERR("fi_av_insert", (numSuccess!=1), numSuccess);
-	// printf("Peer address %lld\n", peer_addr);
-	char dstAddr[64];
-	memset(dstAddr, 0, 64);
-	if (is_client) {
-		char t[] = {-2, -128, 0, 0, 0, 0, 0, 0, 0, -35, 15, -1, -2, 66, -127, 73, 0};
-		for (int i = 0; i < sizeof(t); i ++ ) {
-			dstAddr[i] = t[i];
-		}
-	} else {
-		char t[] = {-2, -128, 0, 0, 0, 0, 0, 0, 0, -35, 15, -1, -2, 66, -127, 73, 1};
-		for (int i = 0; i < sizeof(t); i ++ ) {
-			dstAddr[i] = t[i];
-		}
+	std::cout << "Input running mode: 0 stand for server, 1 for client\n";
+	std::cin >> is_client;
+	if (is_client != 0 && is_client != 1) {std::cerr << "must be 0/1"; return 1;}
+
+	init_fabric();
+
+	std::cout << "Endpoint initialized, input idx for peer, avialble index: 0-5\n" ;
+	int peer_idx = 0;
+	std::cin >> peer_idx;
+
+	char dst_addr[size];
+	memset(dst_addr, 0, size);
+	// copy address
+	for (int i = 0; i < sizeof(addr_dict[peer_idx]); i ++) {
+		dst_addr[i] = addr_dict[peer_idx][i];
 	}
+	// insert dst addr
 	int numSuccess = 0;
-	numSuccess = fi_av_insert(av, dstAddr, 1, &peer_addr, 0, NULL);
+	numSuccess = fi_av_insert(av, dst_addr, 1, &peer_addr, 0, NULL);
 	CHK_ERR("fi_av_insert", (numSuccess!=1), numSuccess);
-	printf("Peer address %lld\n", peer_addr);
-	char newbuf[64], newAdd[64]; size_t len = 64; int err = 0;
-	memset(newbuf, 0, 64);
-	memset(newAdd, 0, 64);
-	err = fi_av_lookup(av, peer_addr, newAdd, &len);
-	printf("error code %d\n", err);
-	for (int i = 0; i < 64; i ++){
-		printf("%d, ", newAdd[i]);
-	}
-	printf("\nSend to peer address %s\n", newAdd);
-	
-	fi_av_straddr(av, newAdd, newbuf, &len);
-	printf("Send to peer address %s\n", newbuf);
-	
 
+	// ------ sentinel check inserted address
+	char newbuf[64], newAddr[64]; size_t len = 64; int err = 0;
+	memset(newbuf, 0, 64);
+	memset(newAddr, 0, 64);
+	err = fi_av_lookup(av, peer_addr, newAddr, &len);
+	printf("look up error code %d\n retrieved addr buffer: \n", err);
+	for (int i = 0; i < 64; i ++){
+		printf("%d, ", newAddr[i]);
+	}
+	printf("\n");
+	// 
+	// get the readable address for debugging;
+	fi_av_straddr(av, newAddr, newbuf, &len);
+	printf("Send to peer address %s\n", newbuf);
+	// ------ address check done
+	
 	if (is_client) {
+		
 		printf("Sending '%s' to server\n", sbuf);
 		send_one(size);
 		recv_one(size);
