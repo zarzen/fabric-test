@@ -307,7 +307,7 @@ int main(int argc, char *argv[])
 		printf("Sending '%s' to server\n", sbuf);
 		while(1) {
 			send_one(size);
-			recv_one(size);
+			// recv_one(size);
 			// std::this_thread::sleep_for(std::chrono::seconds(5));
 		}
 		printf("Received '%s' from server\n", rbuf);
@@ -318,7 +318,7 @@ int main(int argc, char *argv[])
 			recv_one(size);
 			// printf("Received '%s' from client\n", rbuf);
 			// printf("Sending '%s' to client\n", sbuf);
-			send_one(size);
+			// send_one(size);
 			// printf("Done, press RETURN to continue, 'q' to exit\n");
 			// if (getchar() == 'q')
 			// 	break;
