@@ -208,7 +208,7 @@ static void send_one(int size)
 	// err = fi_send(ep, sbuf, size, NULL, peer_addr, &sctxt);
 	// err = fi_tsend(ep, sbuf, size, NULL, peer_addr, 123, NULL);
 	// err = fi_tsend(ep, largebuff, largeSize, NULL, peer_addr, 123, NULL);
-	err = fi_send(ep, largebuff, largeSize, NULL, peer_addr, &sctxt);
+	err = fi_send(ep, largebuff, largeSize, NULL, peer_addr, NULL);
 	CHK_ERR("fi_send", (err<0), err);
 
 	wait_cq();
@@ -226,7 +226,7 @@ static void recv_one(int size)
 	// err = fi_recv(ep, rbuf, size, NULL, FI_ADDR_UNSPEC, &rctxt);
 	// err = fi_trecv(ep, rbuf, size, NULL, FI_ADDR_UNSPEC, 123, 0, NULL);
 	// err = fi_trecv(ep, largebuff, largeSize, NULL, FI_ADDR_UNSPEC, 123, 0, NULL);
-	err = fi_recv(ep, largebuff, largeSize, NULL, FI_ADDR_UNSPEC, &rctxt);
+	err = fi_recv(ep, largebuff, largeSize, NULL, 0, NULL);
 	CHK_ERR("fi_recv", (err<0), err);
 
 	wait_cq();
@@ -305,7 +305,7 @@ int main(int argc, char *argv[])
 	int repeat = 100;
 	if (is_client) {
 		printf("Sending '%s' to server\n", sbuf);
-		for (int i = 0; i < repeat; i++) {
+		while(1) {
 			send_one(size);
 			recv_one(size);
 			// std::this_thread::sleep_for(std::chrono::seconds(5));
