@@ -177,11 +177,12 @@ static void wait_cq(void)
 	struct fi_cq_err_entry entry;
 	int ret, completed = 0;
 	fi_addr_t from;
-	int timeout = 30*1000;
+	// int timeout = 30*1000;
 
 	while (!completed) {
 		// ret = fi_cq_readfrom(cq, &entry, 1, &from);
-		ret = fi_cq_sread(cq, &entry, 1, NULL, timeout);
+		// ret = fi_cq_sread(cq, &entry, 1, NULL, timeout);
+		ret = fi_cq_read(cq, &entry, 1);
 		if (ret == -FI_EAGAIN)
 			continue;
 
