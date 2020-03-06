@@ -8,6 +8,7 @@
  * 	2013-2017
  * ********************************************************************/
 #include <iostream>
+#include <thread>
 #include <chrono>
 #include <string>
 #include <stdio.h>
@@ -48,22 +49,24 @@ static char			sbuf[64];
 static char			rbuf[64];
 int is_client = 0;
 std::string nickname;
+char* largebuff;
+size_t largeSize = 5 * 1024 * 1024;
 
-static void get_peer_addr(void *peer_name)
-{
-	int err;
-	char buf[64];
-	size_t len = 64;
+// static void get_peer_addr(void *peer_name)
+// {
+// 	int err;
+// 	char buf[64];
+// 	size_t len = 64;
     
-	buf[0] = '\0';
-	fi_av_straddr(av, peer_name, buf, &len);
-	printf("Translating peer address: %s\n", buf);
-    // if (peer_addr==0ULL)
+// 	buf[0] = '\0';
+// 	fi_av_straddr(av, peer_name, buf, &len);
+// 	printf("Translating peer address: %s\n", buf);
+//     // if (peer_addr==0ULL)
         
-    fi_addr_t pppt;
-	err = fi_av_insert(av, peer_name, 1, &peer_addr, 0, NULL);
-	CHK_ERR("fi_av_insert", (err!=1), err);
-}
+//     fi_addr_t pppt;
+// 	err = fi_av_insert(av, peer_name, 1, &peer_addr, 0, NULL);
+// 	CHK_ERR("fi_av_insert", (err!=1), err);
+// }
 
 static void init_fabric()
 {
@@ -185,8 +188,8 @@ static void wait_cq(void)
 			CHK_ERR("fi_cq_readerr", (ret!=1), ret);
 
 			printf("Completion with error: %d\n", entry.err);
-			if (entry.err == FI_EADDRNOTAVAIL)
-				get_peer_addr(entry.err_data);
+			// if (entry.err == FI_EADDRNOTAVAIL)
+			// 	get_peer_addr(entry.err_data);
 		}
 
 		CHK_ERR("fi_cq_read", (ret<0), ret);
@@ -196,9 +199,6 @@ static void wait_cq(void)
 
 static void send_one(int size)
 {	
-	size_t largeSize = 200 * 1024 * 1024;
-	char* largebuff = new char[largeSize];
-	ft_fill_buf(largebuff, largeSize);
 	int err;
 	auto s = std::chrono::high_resolution_clock::now();
 	// CHK_ERR("send_one", (peer_addr==0ULL), -EDESTADDRREQ);
@@ -214,16 +214,13 @@ static void send_one(int size)
 	wait_cq();
 	auto e = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double, std::milli> cost_t = e - s;
-	std::cout << "Send message cost :" << cost_t.count() << " ms\n";
-	std::cout << s.time_since_epoch().count() << "\n";
-	std::cout << e.time_since_epoch().count() << "\n";
-	delete[] largebuff;
+	float dur = cost_t.count();
+	std::cout << "Send message cost :" << dur << " ms\n";
+	std::cout << "send bw " << ((largeSize * 8) / (dur / 1000.0)) / 1e9 << " Gbps\n";
 }
 
 static void recv_one(int size)
 {
-	size_t largeSize = 200 * 1024 * 1024;
-	char* largebuff = new char[largeSize];
 	int err;
 	auto s = std::chrono::high_resolution_clock::now();
 	// err = fi_recv(ep, rbuf, size, NULL, FI_ADDR_UNSPEC, &rctxt);
@@ -235,10 +232,10 @@ static void recv_one(int size)
 	wait_cq();
 	auto e = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double, std::milli> cost_t = e - s;
-	std::cout << "Recv message cost :" << cost_t.count() << " ms\n";
-	std::cout << s.time_since_epoch().count() << "\n";
-	std::cout << e.time_since_epoch().count() << "\n";
-	delete[] largebuff;
+	float dur = cost_t.count();
+	std::cout << "Recv message cost :" << dur << " ms\n";
+	std::cout << "recv bw " << ((largeSize * 8) / (dur / 1000.0)) / 1e9 << " Gbps\n";
+
 }
 
 
@@ -255,7 +252,9 @@ int main(int argc, char *argv[])
 		{-2, -128, 0, 0, 0, 0, 0, 0, 0, 80, 48, -1, -2, 118, -13, -9, 2}
 	};
 
-	char *server = NULL;
+	largebuff = new char[largeSize];
+	ft_fill_buf(largebuff, largeSize);
+
 	int size = 64;
 
 	if (argc < 2) {
@@ -303,26 +302,30 @@ int main(int argc, char *argv[])
 	printf("Send to peer address %s\n", newbuf);
 	// ------ address check done
 	
+	int repeat = 20;
 	if (is_client) {
-		
 		printf("Sending '%s' to server\n", sbuf);
-		send_one(size);
-		recv_one(size);
-		printf("Received '%s' from server\n", rbuf);
-	} else {
-		while (1) {
-			printf("Waiting for client\n");
-			recv_one(size);
-			printf("Received '%s' from client\n", rbuf);
-			printf("Sending '%s' to client\n", sbuf);
+		for (int i = 0; i < repeat; i++) {
 			send_one(size);
-			printf("Done, press RETURN to continue, 'q' to exit\n");
-			if (getchar() == 'q')
-				break;
+			recv_one(size);
+			std::this_thread::sleep_for(std::chrono::seconds(5));
+		}
+		printf("Received '%s' from server\n", rbuf);
+
+	} else {
+		printf("Waiting for client\n");
+		while (1) {
+			recv_one(size);
+			// printf("Received '%s' from client\n", rbuf);
+			// printf("Sending '%s' to client\n", sbuf);
+			send_one(size);
+			// printf("Done, press RETURN to continue, 'q' to exit\n");
+			// if (getchar() == 'q')
+			// 	break;
 		}
 	}
 
 	finalize_fabric();
-
+	delete[] largebuff;
 	return 0;
 }
