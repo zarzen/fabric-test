@@ -302,13 +302,13 @@ int main(int argc, char *argv[])
 	printf("Send to peer address %s\n", newbuf);
 	// ------ address check done
 	
-	int repeat = 20;
+	int repeat = 100;
 	if (is_client) {
 		printf("Sending '%s' to server\n", sbuf);
 		for (int i = 0; i < repeat; i++) {
 			send_one(size);
 			recv_one(size);
-			std::this_thread::sleep_for(std::chrono::seconds(5));
+			// std::this_thread::sleep_for(std::chrono::seconds(5));
 		}
 		printf("Received '%s' from server\n", rbuf);
 
