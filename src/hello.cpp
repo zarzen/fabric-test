@@ -327,14 +327,23 @@ int main(int argc, char *argv[])
 	int repeat = 250;
 	if (is_client) {
 		printf("Sending '%s' to server\n", sbuf);
+		auto s = std::chrono::high_resolution_clock::now();
 		for (int i = 0; i < repeat; i ++) {
-			send_one(size);
-			std::cout << "send once\n";
+
+			err = fi_send(ep, largebuff, largeSize, NULL, peer_addr, NULL);
+			CHK_ERR("fi_send", (err<0), err);
+			// send_one(size);
+			// std::cout << "send once\n";
 			// recv_one(size);
 			// std::this_thread::sleep_for(std::chrono::seconds(5));
 		}
+		wait_cq(repeat);
+		auto e = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<double, std::milli> cost_t = e - s;
+		float dur = cost_t.count();
+		float bw = ((repeat * largeSize * 8) / (dur / 1000)) / 1e9;
 		// printf("Received '%s' from server\n", rbuf);
-		std::cout << "Send bw " << sendbw << " Gbps\n";
+		std::cout << "Send bw " << bw << " Gbps\n";
 
 	} else {
 		printf("Waiting for client\n");
