@@ -50,7 +50,7 @@ static char			rbuf[64];
 int is_client = 0;
 std::string nickname;
 char* largebuff;
-size_t largeSize = 200 * 1024 * 1024;
+size_t largeSize = 20 * 1024 * 1024;
 static float sendbw = 0.0;
 static float recvbw = 0.0;
 
@@ -174,14 +174,14 @@ void ft_fill_buf(void *buf, int size)
 	}
 }
 
-static void wait_cq(void)
+static void wait_cq(int wait_for)
 {
 	struct fi_cq_err_entry entry;
 	int ret, completed = 0;
 	fi_addr_t from;
 	// int timeout = 30*1000;
 
-	while (!completed) {
+	while (completed < wait_for) {
 		// ret = fi_cq_readfrom(cq, &entry, 1, &from);
 		// ret = fi_cq_sread(cq, &entry, 1, NULL, timeout);
 		ret = fi_cq_read(cq, &entry, 1);
@@ -198,7 +198,7 @@ static void wait_cq(void)
 		}
 
 		CHK_ERR("fi_cq_read", (ret<0), ret);
-		completed += ret;
+		completed ++;
 	}
 }
 
@@ -216,7 +216,7 @@ static void send_one(int size)
 	err = fi_send(ep, largebuff, largeSize, NULL, peer_addr, NULL);
 	CHK_ERR("fi_send", (err<0), err);
 
-	wait_cq();
+	wait_cq(1);
 	auto e = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double, std::milli> cost_t = e - s;
 	float dur = cost_t.count();
@@ -240,7 +240,7 @@ static void recv_one(int size)
 	err = fi_recv(ep, largebuff, largeSize, NULL, 0, NULL);
 	CHK_ERR("fi_recv", (err<0), err);
 
-	wait_cq();
+	wait_cq(1);
 	auto e = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double, std::milli> cost_t = e - s;
 	float dur = cost_t.count();
