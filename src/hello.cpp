@@ -50,7 +50,9 @@ static char			rbuf[64];
 int is_client = 0;
 std::string nickname;
 char* largebuff;
-size_t largeSize = 1 * 1024 * 1024;
+size_t largeSize = 200 * 1024 * 1024;
+static float sendbw = 0.0;
+static float recvbw = 0.0;
 
 // static void get_peer_addr(void *peer_name)
 // {
@@ -218,8 +220,14 @@ static void send_one(int size)
 	auto e = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double, std::milli> cost_t = e - s;
 	float dur = cost_t.count();
-	std::cout << "Send message cost :" << dur << " ms\n";
-	std::cout << "send bw " << ((largeSize * 8) / (dur / 1000.0)) / 1e9 << " Gbps\n";
+	// std::cout << "Send message cost :" << dur << " ms\n";
+	// std::cout << "send bw " << ((largeSize * 8) / (dur / 1000.0)) / 1e9 << " Gbps\n";
+	if (sendbw > 0) {
+		sendbw += ((largeSize * 8) / (dur / 1000.0)) / 1e9;
+		sendbw /= 2;
+	}else {
+		sendbw = ((largeSize * 8) / (dur / 1000.0)) / 1e9;
+	}
 }
 
 static void recv_one(int size)
@@ -236,9 +244,14 @@ static void recv_one(int size)
 	auto e = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double, std::milli> cost_t = e - s;
 	float dur = cost_t.count();
-	std::cout << "Recv message cost :" << dur << " ms\n";
-	std::cout << "recv bw " << ((largeSize * 8) / (dur / 1000.0)) / 1e9 << " Gbps\n";
-
+	// std::cout << "Recv message cost :" << dur << " ms\n";
+	// std::cout << "recv bw " << ((largeSize * 8) / (dur / 1000.0)) / 1e9 << " Gbps\n";
+	if (recvbw > 0) {
+		recvbw += ((largeSize * 8) / (dur / 1000.0)) / 1e9;
+		recvbw /= 2;
+	}else {
+		recvbw = ((largeSize * 8) / (dur / 1000.0)) / 1e9;
+	}
 }
 
 
@@ -311,20 +324,21 @@ int main(int argc, char *argv[])
 	printf("Send to peer address %s\n", newbuf);
 	// ------ address check done
 	
-	int repeat = 100;
+	int repeat = 500;
 	if (is_client) {
 		printf("Sending '%s' to server\n", sbuf);
-		while(1) {
+		for (int i = 0; i < repeat; i ++) {
 			send_one(size);
 			std::cout << "send once\n";
 			// recv_one(size);
 			// std::this_thread::sleep_for(std::chrono::seconds(5));
 		}
-		printf("Received '%s' from server\n", rbuf);
+		// printf("Received '%s' from server\n", rbuf);
+		std::cout << "Send bw " << sendbw << " Gbps\n";
 
 	} else {
 		printf("Waiting for client\n");
-		while (1) {
+		for (int i = 0; i < repeat; i++) {
 			recv_one(size);
 			// printf("Received '%s' from client\n", rbuf);
 			// printf("Sending '%s' to client\n", sbuf);
@@ -333,6 +347,7 @@ int main(int argc, char *argv[])
 			// if (getchar() == 'q')
 			// 	break;
 		}
+		std::cout << "Recv bw " << recvbw << " Gbps\n";
 	}
 
 	finalize_fabric();
