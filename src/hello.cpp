@@ -50,7 +50,7 @@ static char			rbuf[64];
 int is_client = 0;
 std::string nickname;
 char* largebuff;
-size_t largeSize = 1 * 1024 * 1024;
+size_t largeSize = 2 * 1024 * 1024;
 static float sendbw = 0.0;
 static float recvbw = 0.0;
 
