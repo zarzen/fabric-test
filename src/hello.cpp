@@ -325,23 +325,29 @@ int main(int argc, char *argv[])
 	// ------ address check done
 	
 	int repeat = 250;
+	int warmup_it = 10;
 	if (is_client) {
 		printf("Sending '%s' to server\n", sbuf);
 		auto s = std::chrono::high_resolution_clock::now();
 		for (int i = 0; i < repeat; i ++) {
-
+			
 			err = fi_send(ep, largebuff, largeSize, NULL, peer_addr, NULL);
 			CHK_ERR("fi_send", (err<0), err);
+			if (i < warmup_it) {
+				wait_cq(1);
+			}
+			if (i == warmup_it)
+				s = std::chrono::high_resolution_clock::now();
 			// send_one(size);
 			// std::cout << "send once\n";
 			// recv_one(size);
 			// std::this_thread::sleep_for(std::chrono::seconds(5));
 		}
-		wait_cq(repeat);
+		wait_cq(repeat - warmup_it);
 		auto e = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double, std::milli> cost_t = e - s;
 		float dur = cost_t.count();
-		float bw = ((repeat * largeSize * 8) / (dur / 1000)) / 1e9;
+		float bw = (((repeat - warmup_it) * largeSize * 8) / (dur / 1000)) / 1e9;
 		// printf("Received '%s' from server\n", rbuf);
 		std::cout << "Send bw " << bw << " Gbps\n";
 
@@ -351,6 +357,12 @@ int main(int argc, char *argv[])
 		for (int i = 0; i < repeat; i++) {
 			err = fi_recv(ep, largebuff, largeSize, NULL, 0, NULL);
 			CHK_ERR("fi_recv", (err<0), err);
+
+			if (i < warmup_it) {
+				wait_cq(1);
+			}
+			if (i == warmup_it)
+				s = std::chrono::high_resolution_clock::now();
 			// recv_one(size);
 			// printf("Received '%s' from client\n", rbuf);
 			// printf("Sending '%s' to client\n", sbuf);
@@ -359,11 +371,11 @@ int main(int argc, char *argv[])
 			// if (getchar() == 'q')
 			// 	break;
 		}
-		wait_cq(repeat);
+		wait_cq(repeat - warmup_it);
 		auto e = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double, std::milli> cost_t = e - s;
 		float dur = cost_t.count();
-		float bw = ((repeat * largeSize * 8) / (dur / 1000)) / 1e9;
+		float bw = (((repeat - warmup_it) * largeSize * 8) / (dur / 1000)) / 1e9;
 		// printf("Received '%s' from server\n", rbuf);
 		std::cout << "Recv bw " << bw << " Gbps\n";
 	}
