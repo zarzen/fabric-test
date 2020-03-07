@@ -50,7 +50,7 @@ static char			rbuf[64];
 int is_client = 0;
 std::string nickname;
 char* largebuff;
-size_t largeSize = 20 * 1024 * 1024;
+size_t largeSize = 1 * 1024 * 1024;
 static float sendbw = 0.0;
 static float recvbw = 0.0;
 
@@ -324,7 +324,7 @@ int main(int argc, char *argv[])
 	printf("Send to peer address %s\n", newbuf);
 	// ------ address check done
 	
-	int repeat = 500;
+	int repeat = 250;
 	if (is_client) {
 		printf("Sending '%s' to server\n", sbuf);
 		for (int i = 0; i < repeat; i ++) {
