@@ -347,8 +347,11 @@ int main(int argc, char *argv[])
 
 	} else {
 		printf("Waiting for client\n");
+		auto s = std::chrono::high_resolution_clock::now();
 		for (int i = 0; i < repeat; i++) {
-			recv_one(size);
+			err = fi_recv(ep, largebuff, largeSize, NULL, 0, NULL);
+			CHK_ERR("fi_recv", (err<0), err);
+			// recv_one(size);
 			// printf("Received '%s' from client\n", rbuf);
 			// printf("Sending '%s' to client\n", sbuf);
 			// send_one(size);
@@ -356,7 +359,13 @@ int main(int argc, char *argv[])
 			// if (getchar() == 'q')
 			// 	break;
 		}
-		std::cout << "Recv bw " << recvbw << " Gbps\n";
+		wait_cq(repeat);
+		auto e = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<double, std::milli> cost_t = e - s;
+		float dur = cost_t.count();
+		float bw = ((repeat * largeSize * 8) / (dur / 1000)) / 1e9;
+		// printf("Received '%s' from server\n", rbuf);
+		std::cout << "Recv bw " << bw << " Gbps\n";
 	}
 
 	finalize_fabric();
