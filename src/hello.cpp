@@ -324,7 +324,7 @@ int main(int argc, char *argv[])
 	printf("Send to peer address %s\n", newbuf);
 	// ------ address check done
 	
-	int repeat = 250;
+	int repeat = 500;
 	int warmup_it = 10;
 	if (is_client) {
 		printf("Sending '%s' to server\n", sbuf);
